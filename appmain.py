@@ -3,13 +3,22 @@ use module
 import os
 """
 import logging
-from fastapi import FastAPI
-from crawl.categorycrawl import CategoryCrawl  # pylint: disable
-from common.database.dbmanager import DatabaseManager
+import uvicorn
+from uuid import uuid4
+from fastapi import FastAPI, Depends
+from crawl.categorycrawl import CategoryCrawl, crawl  # pylint: disable
+from common.database.dbmanager import DatabaseManager, db
 from common.config.configmanager import ConfigManager
 from common.log import make_logger
+from routers import category
+import asyncio
+
+logger = make_logger('uvicorn')
 
 app = FastAPI()
+app.include_router(category.router)
+
+context = {'jobs': {}}
 
 
 @app.get("/")
@@ -17,28 +26,25 @@ async def root():
     return {"message": "Hello World111"}
 
 
-def main():
+@app.get(
+    "/start"
+)
+async def start():
+    identifier = str(uuid4())
+    logging.info("start")
+    context['jobs'][identifier] = {}
 
-    logger = make_logger()
+    asyncio.run_coroutine_threadsafe(crawl.parse(identifier, context), loop=asyncio.get_running_loop())
 
-    logger.info('Crawl Test')
+    return {"identifier": identifier}
 
-    # driver = Selenium().driver
 
-    ConfigManager()
-    DatabaseManager()
-
-    # pickle.dumps(DatabaseManager())
-    # 카테고리 파싱 주석
-    # CategoryCrawl().run()
-    CategoryCrawl().parse()
-
-    # ProductCrawl()
-
-    logger.info('Crawl Test End')
-
-    # driver.quit()
+@app.get(
+    "/status/{identifier}"
+)
+async def get_crawl_status(identifier: str):
+    return {"status": context['jobs'].get(identifier, 'job with that identifier is undefined')}
 
 
 if __name__ == '__main__':
-    main()
+    uvicorn.run("appmain:app", host="0.0.0.0", port=8000, reload=True)

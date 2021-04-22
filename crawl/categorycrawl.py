@@ -2,6 +2,7 @@ import re
 import json
 import os
 import time
+import asyncio
 import requests
 import logging
 from datetime import datetime
@@ -22,6 +23,7 @@ class CategoryCrawl(object):
     COLLECTION = 'category'
     _DELIMITER = 'category?catId='
     _PATH_TOKEN = '#'
+    status: dict = {}
 
     def __init__(self):
         # 크롤링 설정 정보 관리 - singleton
@@ -45,6 +47,17 @@ class CategoryCrawl(object):
         _update_data['update_time'] = datetime.now()
 
         return self.database_manager.update(self.COLLECTION, _query, {"&set": _update_data})
+
+    def crawl_status(self, cid: str, name: str, status: int):
+        self.status = {"status": {
+            "message": "Category Crawling Status",
+            "cid": cid,
+            "name": name,
+            "status": status,
+            "Remaining count": len(self._category_list),
+        }}
+
+        return self.status
 
     def _insert(self, cid, name, paths: str, is_root: bool = False):
         """ Mongo Database Insert """
@@ -104,13 +117,20 @@ class CategoryCrawl(object):
                     if li.find('ul') is not None:
                         self._parse_category(li, _paths)
 
-    def parse(self):
+    async def parse(self, identifier: str, context: dict):
+
+        logging.info("Category Crawl Start >> WEB")
+
         for category_id in range(self.CATEGORY_ID, self.CATEGORY_ID + 11):
+            await asyncio.sleep(1)
             _url = 'https://search.shopping.naver.com/category/category/{0}'
             logging.info("PID >> %s | CategoryID >> %d " % (os.getpid(), category_id))
 
+            jobs = context['jobs']
+
+            job_info = jobs[identifier]
+
             request = requests.get(_url.format(category_id))
-            Utils.take_a_sleep(0, 1)
             #  상태 체크
             if request.status_code != 200:
                 return
@@ -119,6 +139,10 @@ class CategoryCrawl(object):
                 tree: HtmlElement = html.fromstring(_content)
                 header_xpath = '//*[@id="__next"]/div/div[2]/h2'
                 _root_name = tree.xpath(header_xpath)[0].text
+                job_info['status'] = 'in progress'
+                job_info['name'] = _root_name
+
+                self.crawl_status(str(category_id), _root_name, request.status_code)
 
                 self._insert(str(category_id), _root_name, None, True)
 
@@ -146,16 +170,9 @@ class CategoryCrawl(object):
             for item in self._category_list:
                 _query = self.database_manager.find_query('_id', item['_id'])
                 self.database_manager.delete_one(self.COLLECTION, _query)
+        logging.info("Category Crawl END >> WEB")
 
-    def run(self):
-        pass
-        # # for category_id in range(self.CATEGORY_ID, self.CATEGORY_ID + 11):
-        # start = int(time.time())
-        #
-        # num_cores = 2
-        # from multiprocessing import Pool
-        # pool = Pool(num_cores)
-        # pool.map(self.parse, )
-        # # list(map(parse, range(3, 5)))
-        #
-        # print("***run time(sec) :", int(time.time()) - start)
+        context['jobs'][identifier]['status'] = 'done'
+
+
+crawl = CategoryCrawl()

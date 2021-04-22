@@ -5,6 +5,7 @@
 """
 
 import json
+from dataclasses import dataclass, asdict
 from enum import Enum, auto
 
 from common.util import Singleton
@@ -15,10 +16,12 @@ class DatabaseType(Enum):
     Database 유형에 따른 Enum Class
     """
     MONGO = auto()
+    MONGO_DEV = auto()
     ELASTIC = auto()
     NONE = auto()
 
 
+@dataclass
 class DatabaseObject:  # pylint: disable=too-few-public-methods
     """
     Database 설정 정보에 대한 Dataclass
@@ -33,16 +36,17 @@ class DatabaseObject:  # pylint: disable=too-few-public-methods
     tables: dict
 
 
+@dataclass
 class CrawlConfiguration:  # pylint: disable=too-few-public-methods
     """
     Crawl Config 정보에 대한 Dataclass
     """
-    category_id: int = 50000000
-    crawl_count: int = 0
-    crawl_page_range = 0
-    crawl_sleep_time = 0
-    crawl_big_category = False
-    crawl_detail_category = True
+    category_id: int
+    crawl_count: int
+    crawl_page_range: int
+    crawl_sleep_time: int
+    crawl_big_category: bool
+    crawl_detail_category: bool
     exclude_category: list
     crawl_category: list
 
@@ -59,8 +63,8 @@ class ConfigManager(metaclass=Singleton):
         """ DatabaseObject list 와 CrawlConfiguration 으로 초기화 합니다.
         바로 _load()를 합니다. """
         self.database_object_list: [DatabaseObject] = list()
-        self.crawl_config: CrawlConfiguration = None
 
+        self.crawl_config: CrawlConfiguration = None
         self._load()
 
     def get_database_object(self) -> [DatabaseObject]:
@@ -111,28 +115,28 @@ class ConfigManager(metaclass=Singleton):
         if database_list is not None:
             database: dict
             for database in database_list:
-                _dbobj = DatabaseObject()
-                _dbobj.database_type = DatabaseType[database.get('database-type')]
-                _dbobj.host = database.get('host')
-                _dbobj.server = database.get('server')
-                _dbobj.username = database.get('username')
-                _dbobj.password = database.get('password')
-                _dbobj.database_name = database.get('database-name')
-                _dbobj.tables = database.get('tables')
-
+                _dbobj = DatabaseObject(
+                    database_type=DatabaseType[database.get('database-type')],
+                    host=database.get('host'),
+                    server=database.get('server'),
+                    port=database.get('port'),
+                    username=database.get('username'),
+                    password=database.get('password'),
+                    database_name=database.get('database-name'),
+                    tables=database.get('tables'),
+                )
                 self.database_object_list.append(_dbobj)
 
     def _crawl_config_parse(self, crawl_config: dict):
         """ Crawl Config 정보를 파싱하여 객체에 주입 """
         if crawl_config is not None:
-            self.crawl_config = CrawlConfiguration()
-
-            self.crawl_config.crawl_count = crawl_config.get('crawl-count')
-            self.crawl_config.exclude_category = crawl_config.get('exclude-category')
-            self.crawl_config.crawl_page_range = crawl_config.get('crawl-page-range')
-            self.crawl_config.crawl_sleep_time = crawl_config.get('crawl-sleep-time')
-            self.crawl_config.crawl_big_category = crawl_config.get('crawl-big-category')
-            self.crawl_config.crawl_detail_category = crawl_config.get('crawl-detail-category')
-            self.crawl_config.exclude_category = crawl_config.get('exclude-category')
-            self.crawl_config.crawl_category = crawl_config.get('crawl-category-list')
-            self.crawl_config.category_id = int(crawl_config.get('category-id'))
+            self.crawl_config = CrawlConfiguration(
+                crawl_count=crawl_config.get('crawl-count'),
+                exclude_category=crawl_config.get('exclude-category'),
+                crawl_page_range=crawl_config.get('crawl-page-range'),
+                crawl_sleep_time=crawl_config.get('crawl-sleep-time'),
+                crawl_big_category=crawl_config.get('crawl-big-category'),
+                crawl_detail_category=crawl_config.get('crawl-detail-category'),
+                crawl_category=crawl_config.get('crawl-category-list'),
+                category_id=int(crawl_config.get('category-id')),
+            )

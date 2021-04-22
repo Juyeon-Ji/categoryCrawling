@@ -7,6 +7,9 @@ MongoDB Client 연결 및 DB에 접근하여 Collection 생성
 from enum import Enum, auto
 from pymongo import MongoClient
 from pymongo.database import Database
+from common.config.configmanager import DatabaseObject
+
+from urllib.parse import quote_plus
 
 
 class TableType(Enum):
@@ -22,10 +25,16 @@ class MongoDBManager:
 
     host URL, Database 이름, Collection 이름
     """
-    def __init__(self, host, database, collection):
+    def __init__(self, host, database, collection, database_object: DatabaseObject = None):
         self.host = host
         self.database = database
         self.collection = collection
+
+        self._url = database_object.server
+        # self._port = database_object.port
+
+        self._username = database_object.username
+        self._password = database_object.password
 
         self._client: MongoClient = None
 
@@ -34,6 +43,11 @@ class MongoDBManager:
         self._connect()
 
     def _connect(self):
+        # uri = "mongodb://%s:%s@%s" % (quote_plus(user), quote_plus(password), quote_plus(socket_path))
+        # - `username`: A
+        # string.
+        # - `password`: A
+        # string.
         self._client = MongoClient(self.host)
 
         if self._client is not None:

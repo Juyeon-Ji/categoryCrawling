@@ -23,7 +23,15 @@ class DatabaseManager(metaclass=Singleton):
             if DatabaseType.MONGO == database.database_type:
                 self._mongo_db = MongoDBManager(host=database.host,
                                                 database=database.database_name,
-                                                collection=database.tables)
+                                                collection=database.tables,
+                                                database_object=database)
+
+            elif DatabaseType.ELASTIC == database.database_type:
+                pass
+                # self._mongo_db = MongoDBManager(host=database.host,
+                #                                 database=database.database_name,
+                #                                 collection=database.tables,
+                #                                 database_object=database)
 
             elif DatabaseType.ELASTIC == database.database_type:
                 pass
@@ -89,4 +97,7 @@ class DatabaseManager(metaclass=Singleton):
     @staticmethod
     def find_query(field, keyword) -> dict:
         return {field: keyword}
+
+
+db = DatabaseManager()
 

@@ -263,7 +263,7 @@ class ProductCrawl:
         product_data['cname'] = self._category.get('name')
 
     def _set_product_info(self, product_data: dict, product_item):
-        product_data['id'] = product_item.get('id')
+        product_data['nid'] = product_item.get('id')
         product_data['imageUrl'] = product_item.get('imageUrl')
         product_data['title'] = product_item.get('productTitle')
         product_data['price'] = product_item.get('price')

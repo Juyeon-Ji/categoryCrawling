@@ -2,8 +2,8 @@
     "database": [
         {
             "database-type": "MONGO",
-            "host": "mongodb://192.168.137.223:27017/",
-            "server": "192.168.137.223",
+            "host": "mongodb://192.168.137.222:27017/",
+            "server": "192.168.137.222",
             "port": 27017,
             "username": "",
             "password": "",
@@ -14,12 +14,12 @@
             }
         },
         {
-            "database-type": "ELASTIC",
-            "host": "elastic://192.168.137.223:27017/",
-            "server": "192.168.137.223",
-            "port": 9200,
+            "database-type": "MONGO_DEV",
+            "host": "mongodb://10.20.97.84:30014/",
+            "server": "10.20.97.84",
+            "port": 30014,
             "username": "root",
-            "password": "test",
+            "password": "tsGt3KRAQ6",
             "database-name": "crawl_database",
             "tables":{
                 "table-1": "category",
